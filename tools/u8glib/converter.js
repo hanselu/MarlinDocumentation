@@ -53,7 +53,7 @@ window.bitmap_converter = function() {
       $type       = $('input[name=bitmap-type]'),
       $statop     = $('#stat-sub'),
       $oldon      = $('#old-on'),
-      $olddata    = $('#olddata'),
+      $pasted     = $('#pasted'),
       field_arr = [$binary[0], $ascii[0], $skinny[0], $hotends[0], $bed[0], $fan[0], $type[0]],
       tohex       = function(b) { return '0x' + ('0' + (b & 0xFF).toString(16)).toUpperCase().slice(-2); },
       tobin       = function(b) { return 'B' + ('0000000' + (b & 0xFF).toString(2)).slice(-8); },
@@ -210,7 +210,12 @@ window.bitmap_converter = function() {
   // Set the image src to some new data.
   // This will fire $img.load when the data is ready.
   //
-  var load_data_into_image = function(data) {
+  var load_data_into_image = function(data, w, h) {
+
+    $img = $('<img/>');
+    var img = $img[0];
+    if (w) img.width = w;
+    if (h) img.height = h;
                                         // Generate C++ whenever...
     $(field_arr).change(generate_cpp);  //  Form values are changed
     $img.load(generate_cpp)             //  The image loads new content
@@ -219,22 +224,22 @@ window.bitmap_converter = function() {
     rnd_name = random_name('bitmap_');  // A new bitmap name on each file load
   };
 
-  var restore_olddata_field = function() {
-    $olddata.val('Paste Marlin bitmap data here.').css({ color:'', fontSize:'' });
+  var restore_pasted_cpp_field = function() {
+    $pasted.val('Paste Marlin bitmap data here.').css({ color:'', fontSize:'' });
   };
 
   //
   // Convert C++ data array back into an image
   // assuming that lines match up.
   //
-  var legacy_data_to_image = function(e) {
+  var load_pasted_cpp_into_image = function(e) {
     //console.log(e);
-    var cpp = $olddata.val(),
+    var cpp = $pasted.val(),
         dat = [],
         wide = 0, high = 0;
 
     prepare_for_new_image();
-    restore_olddata_field();
+    restore_pasted_cpp_field();
 
     // Get the split up bytes on all lines
     var lens = [], mostlens = [];
@@ -307,10 +312,7 @@ window.bitmap_converter = function() {
 
     ctx_sm.putImageData(image_data, 0, 0);
 
-    var img = $img[0];
-    img.width = wide;
-    img.height = high;
-    load_data_into_image($small[0].toDataURL('image/png'));
+    load_data_into_image($small[0].toDataURL('image/png'), wide, high);
   };
 
   // Create a file reader with responder for successful load
@@ -347,16 +349,16 @@ window.bitmap_converter = function() {
   prepare_for_new_image();
 
   // Set a friendly message for C++ data paste
-  restore_olddata_field();
+  restore_pasted_cpp_field();
 
   // Toggle for the Old Data field
   $oldon.change(function(){
     if (this.checked) {
-      $olddata.show();
+      $pasted.show();
       $filein.hide();
     }
     else {
-      $olddata.hide();
+      $pasted.hide();
       $filein.show();
     }
     return false;
@@ -366,11 +368,11 @@ window.bitmap_converter = function() {
   $output.bind('focus click', function() { this.select(); });
 
   // Paste old C++ code to see the image and reformat
-  $olddata.bind('focus click', function(){ $(this).val(''); });
+  $pasted.bind('focus click', function(){ $(this).val(''); });
 
-  $olddata.bind('paste', function(){ $(this).css({ color:'#000', fontSize:'100%' }); });
-  $olddata.bind('keyup', function(){ $(this).trigger('blur'); });
-  $olddata.bind('blur', legacy_data_to_image);
+  $pasted.bind('paste', function(){ $(this).css({ color:'#FFFFFF00' }); });
+  $pasted.bind('keyup', function(){ $(this).trigger('blur'); });
+  $pasted.bind('blur', load_pasted_cpp_into_image);
 }
 
 head.ready(window.bitmap_converter);
